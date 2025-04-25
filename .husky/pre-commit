@@ -1,0 +1,17 @@
+echo "Running pre-commit checks..."
+
+
+# Run Prettier
+echo "Running Prettier..."
+npm run format || {
+    echo "❌ Prettier check failed. Run 'npm run format:fix' to automatically fix formatting issues."
+    exit 1
+}
+
+npm run format:fix || {
+    echo "❌ Prettier auto-fix failed. Please fix the issues manually."
+    exit 1
+}
+
+
+echo "✅ All checks passed!"

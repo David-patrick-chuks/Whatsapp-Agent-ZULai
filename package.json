@@ -1,0 +1,45 @@
+{
+  "name": "whatsapp-bot",
+  "version": "1.0.0",
+  "description": "",
+  "author": "David Patrick",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "start": "tsc   && node  --no-warnings dist/index.js",
+    "dev": "tsc  & nodemon dist/index.js",
+    "sticker": "tsc && nodemon dist/agent/vision/Sticker-Vision.js",
+    "img": "tsc && nodemon dist/agent/vision/Image-Vision.js",
+    "sti": "tsc && nodemon dist/agent/Sticker.js",
+    "music": "tsc && node dist/agent/media/audio.js",
+    "format": "prettier . --check",
+    "format:fix": "prettier . --write",
+    "lint": "eslint src",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^0.10.0",
+    "@google/generative-ai": "^0.24.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mime-types": "^3.0.1",
+    "mongoose": "^8.13.2",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "rimraf": "^6.0.1",
+    "whatsapp-web.js": "^1.27.0",
+    "wwebjs-mongo": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/mime-types": "^2.1.4",
+    "@types/qrcode": "^1.5.5",
+    "@types/qrcode-terminal": "^0.12.2",
+    "eslint": "^9.25.1",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3"
+  }
+}
