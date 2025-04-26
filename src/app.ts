@@ -9,6 +9,9 @@ import db from "./config/db";
 import { clearWWebjsCache } from "./services";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import { replyUserSticker } from "./agent/Sticker";
+import { replyImage } from "./agent/vision/Image-Vision";
+import { replyAudio } from "./agent/media/audio";
 
 const app: Application = express();
 
@@ -19,7 +22,7 @@ db.connect()
 let client: Client;
 let globalQRCodeDataURL: string | null = null;
 
-const MESSAGE_DELAY = 10000; // Delay time in milliseconds (3 seconds)
+const MESSAGE_DELAY = 1000; // Delay time in milliseconds (3 seconds)
 let messageBuffer: Message[] = [];
 let messageTimeout: NodeJS.Timeout | null = null;
 
@@ -39,9 +42,8 @@ async function handleMessagesBatch(messages: Message[]) {
       console.log("Replied to the single message:", response);
     } else {
       // Handle multiple messages, or react to the last one.
-      await lastMessage.react('👍');  // React to the last message as a "thumbs up"
+    //   await lastMessage.react('👍');  // React to the last message as a "thumbs up"
       console.log("Reacted to the last message.");
-
       // Reply to all collected messages one by one (or you could choose specific logic)
       for (const msg of messages) {
         const response = await runAgent(messages.map(m => m.body).join("\n\n"), msg.body.trim());
@@ -58,52 +60,86 @@ async function handleMessagesBatch(messages: Message[]) {
   }
 }
 
+
 async function handleIncoming(message: Message) {
-  try {
-    const contact = await message.getContact();
-    const senderName = contact.pushname || contact.name || contact.number || "Unknown";
-    const chat = await message.getChat();
-
-    console.log("Received message from", senderName, "type=", message.type);
-
-    // Collect incoming messages for a short time before processing
-    messageBuffer.push(message);
-
-    // If a message timeout is already set, clear it (to reset the waiting time)
-    if (messageTimeout) clearTimeout(messageTimeout);
-
-    // Set a timeout to process all messages in the buffer after the delay
-    messageTimeout = setTimeout(() => {
-      handleMessagesBatch(messageBuffer);
-    }, MESSAGE_DELAY);
-
-    // If it's a media message, handle it immediately
-    if (message.hasMedia) {
-      const media = await message.downloadMedia();
-      if (media?.data) {
-        const mimetype = media.mimetype;
-        const folder =
-          mimetype === "image/gif" ? "gifs" :
-          mimetype === "image/webp" ? "stickers" :
-          mimetype.startsWith("image/") ? "images" :
-          "media";
-        
-        const ext = mimetype.split("/")[1];
-        const dir = join(process.cwd(), "downloads", folder);
-        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-        
-        const filename = `${Date.now()}_${message.from}.${ext}`;
-        const filepath = join(dir, filename);
-        writeFileSync(filepath, Buffer.from(media.data, "base64"));
-        
-        console.log(`Saved ${folder} to ${filepath}`);
-        await message.reply(`Got your ${folder.slice(0, -1)}—I've saved it! 😊`);
+    try {
+      const contact = await message.getContact();
+      const senderName = contact.pushname || contact.name || contact.number || "Unknown";
+      const chat = await message.getChat();
+  
+      console.log("Received message from", senderName, "type=", message.type);
+  
+      if (message.hasMedia) {
+        const media = await message.downloadMedia();
+        if (media?.data) {
+          const mimetype = media.mimetype;
+          const folder =
+            mimetype === "image/gif" ? "gifs" :
+            mimetype === "image/webp" ? "stickers" :
+            mimetype.startsWith("image/") ? "images" :
+            mimetype.startsWith("audio/") ? "audios" :
+            "media";
+  
+        //   const ext = mimetype.split("/")[1];
+        const ext = mimetype.split("/")[1]?.split(";")[0];
+            if (!ext) {
+                console.error("Unsupported media type:", mimetype);
+                return;
+            }
+          const dir = join(process.cwd(), "downloads", folder);
+          if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  
+          const filename = `${Date.now()}_${message.from}.${ext}`;
+          const filepath = join(dir, filename);
+          writeFileSync(filepath, Buffer.from(media.data, "base64"));
+  
+          console.log(`Saved ${folder} to ${filepath}`);
+  
+          if (folder === "stickers") {
+            const stickerResponse = await replyUserSticker(filepath);
+            if (stickerResponse) {
+              await message.reply(stickerResponse);
+              console.log("Replied to sticker with:", stickerResponse);
+            }
+          } 
+          else if (folder === "images") {
+            const imageResponse = await replyImage(filepath);
+            if (imageResponse) {
+              await message.reply(imageResponse);
+              console.log("Replied to image with:", imageResponse);
+            }
+          }
+          else if (folder === "audios") {
+            const audioResponse = await replyAudio(filepath);
+            if (audioResponse) {
+        const response = await runAgent(messageBuffer.map(m => m.body).join("\n\n"), audioResponse);
+                
+              await message.reply(response);
+              console.log("Replied to audio with:", audioResponse);
+            }
+          } 
+          else {
+            await message.reply(`Got your ${folder.slice(0, -1)}—I've saved it! 😊`);
+          }
+  
+          // 👉🏽 After replying to media, exit early.
+          return;
+        }
       }
+  
+      // 🟰 If it's not media (pure text), continue the normal flow
+      messageBuffer.push(message);
+  
+      if (messageTimeout) clearTimeout(messageTimeout);
+      messageTimeout = setTimeout(() => {
+        handleMessagesBatch(messageBuffer);
+      }, MESSAGE_DELAY);
+  
+    } catch (error) {
+      console.error("Error processing incoming message:", error);
     }
-  } catch (error) {
-    console.error("Error processing incoming message:", error);
   }
-}
+  
 
   
 mongoose.connection.once("open", () => {

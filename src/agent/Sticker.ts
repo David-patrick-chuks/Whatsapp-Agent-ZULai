@@ -147,20 +147,14 @@ export async function stickerReply(prompt: string) {
 
 
 
-export const replyUserSticker = async () => {
+export const replyUserSticker = async (path: string) => {
     try {
-
         const processor = new StickerProcessor();
-     
-
-        const result = await processor.processStickerFile("girl.webp");
+        const result = await processor.processStickerFile(path);
         console.log("✅ Raw Result:", result);
-        stickerReply(result.description).then((response) => {
-            console.log("AI Response:", response.reply);
-        }).catch((error) => {
-            console.error("Error in sticker reply:", error);
-        })
-
+        const response = await stickerReply(result.description)
+        console.log("AI Response:", response.reply);
+        return response.reply;
     } catch (error) {
         console.error("Error replying to user sticker:", error);
 

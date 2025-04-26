@@ -11,13 +11,13 @@ class AudioProcessor {
     constructor() {
         // Initialize the list of API keys
         this.apiKeys = [
-            "AIzaSyDAwMfnUqo7REPxSkLVOCo9OTeaEHAf43E",
-            "AIzaSyAv4K3hVofefPm1d5mt4Y39NQVXNQ49Dbg",
-            "AIzaSyB1YZPMxgYzLdhyWOoLQoi6Akv_AVZQihs",
             "AIzaSyDV9XzIcYhYw9uqNrWZNfI25GT3iFlGy3A",
             "AIzaSyAIcaMSaIPnbsulIMi7WJSrx95tiwyyjIo",
             "AIzaSyDi4JRtfBP0NEXXWLT40rYTD5-_bIBIogQ",
+            "AIzaSyB1YZPMxgYzLdhyWOoLQoi6Akv_AVZQihs",
             "AIzaSyADgAkDx5jvf8kmyk9NqcKSQtSNqeG62qA",
+            "AIzaSyAv4K3hVofefPm1d5mt4Y39NQVXNQ49Dbg",
+            "AIzaSyDAwMfnUqo7REPxSkLVOCo9OTeaEHAf43E",
             "AIzaSyDYeeex41Ssr409I1sx04Jxk3xlb-z1O5M",
         ];
         this.currentApiKeyIndex = 0;
@@ -35,7 +35,7 @@ class AudioProcessor {
     private async processAudioFileRecursive(fileName: string, retryCount: number = 0, maxRetries: number = 3): Promise<any> {
         try {
             // Resolve the file path relative to the project root
-            const filePath = path.resolve(__dirname, "../../../downloads/audio", fileName);
+            const filePath = path.resolve(__dirname, "../../../downloads/audios", fileName);
 
             // Check if the file exists at the resolved path
             if (!fs.existsSync(filePath)) {
@@ -72,7 +72,7 @@ class AudioProcessor {
             });
 
             // Log the response
-            console.log(result.text);
+            // console.log(result.text);
             return result.text;
 
         } catch (error) {
@@ -101,13 +101,36 @@ class AudioProcessor {
     }
 
     // Public method to process the audio file
-    public async processAudioFile(fileName: string): Promise<void> {
-        await this.processAudioFileRecursive(fileName);
+    public async processAudioFile(fileName: string): Promise<any> {
+        return await this.processAudioFileRecursive(fileName);
     }
 }
 
 // Example usage: Initialize the processor and process an audio file
-const processor = new AudioProcessor();
-processor.processAudioFile("Big7.mp3").catch((error) => {
-    console.error("An error occurred:", error);
-});
+
+
+
+export async function replyAudio(path: string) {
+    try {
+
+        const processor = new AudioProcessor();
+        const result = await processor.processAudioFile(path)
+        if (!result) {
+            console.error("No response received from the AI model. || Service Unavailable");
+            return "Service unavailable!";
+        }
+        console.log("Audio result is::", result);
+
+        return result;
+    } catch (error) {
+        console.error("Error running model:", error);
+        if (error instanceof Error) {
+            console.error("Error message:", error.message);
+        } else {
+            console.error("Unknown error:", error);
+        }
+    }
+}
+
+
+replyAudio("1745677519379_2347014185686@c.us.ogg")

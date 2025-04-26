@@ -79,34 +79,41 @@ Instructions:
    - Your task is to check whether any product image appears more than once.
    - For any duplicates, return the product codes of the duplicated product images.
    - The user sample image does not have a product code and should be handled separately. Do not check for duplicates in the user sample image.
-  
-2. **JSON Response Format:**
+   
+2. **User Image Handling:**
+   - If the user sends a **personal image** (non-product image), such as a photo of themselves or other non-product visuals, identify it as a non-product image and exclude it from the duplication check. 
+   - If the user image is detected, return it separately in the response as **"user_image"**.
+
+3. **JSON Response Format:**
    - Return a JSON object with the following structure:
      - "unique_images": An array of unique product codes (excluding duplicates).
      - "duplicate_images": An array of objects containing the duplicated product code and the number of occurrences.
      - "user_image": The user sample image (if provided).
-   
+
 Example Workflow:
 User sends: "Here are the images for our products and my photo."
 List of images: [Product1_Code, Product2_Code, UserImage, Product1_Code]
 
+const [product name] = "the product name i.e trouser or shirt or jeans"
 Response:
 {
-"message" : "Duplicates found.",
+  "message" : "Yes, we have this  [product name] in stock! 🛒",
   "duplicate_images": [
     {
       "product_code": "Product1_Code",
       "occurrences": 2
     }
-  ],
+  ]
 }
 
 AI Response (if no duplicates):
 {
-"message" : "No duplicates found.",
+  "message" : "We currently don't have this  [product name] in stock 😔, but I can recommend similar designs! ✨",
   "duplicate_images": [],
+  "recommendations": [
+    "productCode",
+  ]
 }
-
 `;
 
             // Generate content using Gemini (image duplication check)
@@ -157,8 +164,8 @@ AI Response (if no duplicates):
     }
 
     // Public method to process multiple images
-    public async processImageFile(images: string[]): Promise<void> {
-        await this.processImages(images);
+    public async processImageFile(images: string[]): Promise<any> {
+     return await this.processImages(images);
     }
 }
 
@@ -166,17 +173,26 @@ AI Response (if no duplicates):
 
 // Example usage: Initialize the processor and process an image file
 
-async function runModel() {
+export async function replyImage(path: string) {
+    try {
 
-    const processor = new ImageProcessor();
+        const processor = new ImageProcessor();
+        const imagePaths = ["gg56yu.jpg", "gy58hu.jpg", path]
+        const result = await processor.processImageFile(imagePaths)
+        if (!result || !result.message) {
+            console.error("No response received from the AI model. || Service Unavailable");
+            return "Service unavailable!";
+        }
 
-    // List of images to process
-    const imagePaths = ["gg56yu.jpg", "gy58hu.jpg", "UserImage.jpg"]
-
-
-    const result = await processor.processImageFile(imagePaths)
-
-    console.log("✅ Final Result:", result);
+        return result.message;
+    } catch (error) {
+        console.error("Error running model:", error);
+        if (error instanceof Error) {
+            console.error("Error message:", error.message);
+        } else {
+            console.error("Unknown error:", error);
+        }
+    }
 }
 
-runModel();
+// runModel();
