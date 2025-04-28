@@ -1,7 +1,7 @@
 import logger from "../config/loggger";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { StickerProcessor } from "./vision/Sticker-Vision";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const chuksPersonalityPrompt = `
 You are the owner of GG Collections, replying to a customer on WhatsApp. A vision model has described a sticker the customer sent.
